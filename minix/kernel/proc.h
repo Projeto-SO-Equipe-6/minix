@@ -149,7 +149,7 @@ int p_sjf_priority_boost; /* boost anti-starvation */
 #define SJF_ALPHA 50 /* peso para media exponencial (0-100) */
 #define SJF_INITIAL_ESTIMATE 100 /* estimativa inicial em ticks */
 #define SJF_MAX_ESTIMATE 1000 /* estimativa maxima */
-#define SJF_AGING 500 /* ticks para aging anti-starvation */
+#define SJF_AGING_THRESHOLD 500 /* ticks para aging anti-starvation */
 /* Bits for the runtime flags. A process is runnable iff p_rts_flags == 0. */
 #define RTS_SLOT_FREE	0x01	/* process slot is free */
 #define RTS_PROC_STOP	0x02	/* process has been stopped */
