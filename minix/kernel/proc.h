@@ -33,7 +33,7 @@ struct proc {
 				   FIXME remove this */
   struct proc *p_scheduler;	/* who should get out of quantum msg */
   unsigned p_cpu;		/* what CPU is the process running on */
-clock_t p_estimed_runtime; /* tempo estimado de execucao */
+clock_t p_estimated_runtime; /* tempo estimado de execucao */
 clock_t p_actual_runtime; /* tempo real de execucao */
 clock_t p_start_time; /* quando o processo comecou */
 clock_t p_total_runtime; /* tempo total ja executado */
@@ -146,7 +146,7 @@ int p_sjf_priority_boost; /* boost anti-starvation */
 
 #endif /* __ASSEMBLY__ */
 
-#define SJF_ALPHA 50 /* peso para media exponencial (0-100)
+#define SJF_ALPHA 50 /* peso para media exponencial (0-100) */
 #define SJF_INITIAL_ESTIMATE 100 /* estimativa inicial em ticks */
 #define SJF_MAX_ESTIMATE 1000 /* estimativa maxima */
 #define SJF_AGING 500 /* ticks para aging anti-starvation */

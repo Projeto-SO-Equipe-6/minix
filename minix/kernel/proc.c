@@ -333,7 +333,7 @@ static void sjf_anti_starvation(struct proc *p)
 }
 
 /*	sjf_compare_processes */
-static int sjf_compare_processes(struct proc *p1, struct proc p2)
+static int sjf_compare_processes(struct proc *p1, struct proc *p2)
 {
 	clock_t effective_time1 = p1->p_estimated_runtime - 
 p1->p_sjf_priority_boost;
