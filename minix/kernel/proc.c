@@ -314,7 +314,7 @@ static void update_sjf_estimate(struct proc *p)
 	}
 
 	if (p->p_estimated_runtime > SJF_MAX_ESTIMATE) {
-		p->p_estimate_runtime = SJF_MAX_ESTIMATE;
+		p->p_estimated_runtime = SJF_MAX_ESTIMATE;
 	}
 
 	p->p_execution_count++;
