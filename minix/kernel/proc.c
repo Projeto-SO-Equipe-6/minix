@@ -326,7 +326,7 @@ static void sjf_anti_starvation(struct proc *p)
 	clock_t current_time = get_monotonic();
 	clock_t wait_time = current_time - p->p_wait_start_time;
 
-	if (wait_time > SJF_AGING_THRESHHOLD) {
+	if (wait_time > SJF_AGING_THRESHOLD) {
 		p->p_sjf_priority_boost += 10;
 		p->p_wait_start_time = current_time;
 	}
@@ -356,7 +356,7 @@ static void sjf_insert_sorted(struct proc *p)
 	sjf_anti_starvation(p);
 
 	if (rdy_head[q] == NULL) {
-		rdy_head[q] = rdy_tall[q] = p;
+		rdy_head[q] = rdy_tail[q] = p;
 		p->p_nextready = NULL;
 		return;
 	}
@@ -1698,7 +1698,7 @@ void enqueue(
 		rp->p_wait_start_time = get_monotonic();
 		sjf_insert_sorted(rp);
 	} else {
-		if (rdy_head[q] = NULL) {
+		if (rdy_head[q] == NULL) {
 			rdy_head[q] = rdy_tail[q] = rp;
 		} else {
 			rdy_tail[q]->p_nextready = rp;
@@ -1840,30 +1840,8 @@ static struct proc * pick_proc(void)
  *
  * This function always uses the run queues of the local cpu!
  */
-/*
-  register struct proc *rp;			/* process to run */
-  struct proc **rdy_head;
-  int q;				/* iterate over queues */
-
-  /* Check each of the scheduling queues for ready processes. The number of
-   * queues is defined in proc.h, and priorities are set in the task table.
-   * If there are no processes ready to run, return NULL.
-   */
-  rdy_head = get_cpulocal_var(run_q_head);
-  for (q=0; q < NR_SCHED_QUEUES; q++) {	
-	if(!(rp = rdy_head[q])) {
-		TRACE(VF_PICKPROC, printf("cpu %d queue %d empty\n", cpuid, q););
-		continue;
-	}
-	assert(proc_is_runnable(rp));
-	if (priv(rp)->s_flags & BILLABLE)	 	
-		get_cpulocal_var(bill_ptr) = rp; /* bill for system time */
-	return rp;
-  }
-  return NULL;
-}
-*/
 	struct proc *rp;
+	struct proc **rdy_head;
 	int q;
 
 	for (q = 0; q < NR_SCHED_QUEUES; q++) {
@@ -1974,6 +1952,7 @@ static void notify_scheduler(struct proc *p)
 void proc_no_time(struct proc * p)
 {
 	if (!proc_kernel_scheduler(p) && priv(p)->s_flags & PREEMPTIBLE) {
+		sjf_process_finished(p);
 		/* this dequeues the process */
 		notify_scheduler(p);
 	}
