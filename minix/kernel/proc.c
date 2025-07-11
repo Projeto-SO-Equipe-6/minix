@@ -41,6 +41,11 @@
 
 #include <minix/syslib.h>
 
+static void update_sjf_estimate(struct proc *p);
+static void sjf_anti_starvation(struct proc *p);
+static int sjf_compare_processes(struct proc *p1, struct proc *p2);
+static void sjf_insert_sorted(struct proc *p);
+
 /* Scheduling and message passing functions */
 static void idle(void);
 /**
@@ -293,6 +298,82 @@ static void delivermsg(struct proc *rp)
         }
 }
 
+/*===========================================================================*
+ *				update_sjf_estimate                    *
+*===========================================================================*/
+static void update_sjf_estimate(struct proc *p)
+{
+	clock_t actual_time = p->p_actual_runtime;
+	clock_t old_estimate = p->p_estimated_runtime;
+
+	if (p->p_execution_count > 0) {
+		p->p_estimated_runtime = (SJF_ALPHA * actual_time + 
+(100 - SJF_ALPHA) * old_estimate) / 100;
+	} else {
+		p->p_estimated_runtime = SJF_INITIAL_ESTIMATE;
+	}
+
+	if (p->p_estimated_runtime > SJF_MAX_ESTIMATE) {
+		p->p_estimate_runtime = SJF_MAX_ESTIMATE;
+	}
+
+	p->p_execution_count++;
+}
+
+/*	sjf_anti_starvation	*/
+static void sjf_anti_starvation(struct proc *p)
+{
+	clock_t current_time = get_monotonic();
+	clock_t wait_time = current_time - p->p_wait_start_time;
+
+	if (wait_time > SJF_AGING_THRESHHOLD) {
+		p->p_sjf_priority_boost += 10;
+		p->p_wait_start_time = current_time;
+	}
+}
+
+/*	sjf_compare_processes */
+static int sjf_compare_processes(struct proc *p1, struct proc p2)
+{
+	clock_t effective_time1 = p1->p_estimated_runtime - 
+p1->p_sjf_priority_boost;
+	clock_t effective_time2 = p2->p_estimated_runtime - 
+p2->p_sjf_priority_boost;
+
+	return (effective_time1 < effective_time2) ? 1 : 0;
+}
+
+/*	sjf_insert_sorted	*/
+static void sjf_insert_sorted(struct proc *p)
+{
+	int q = p->p_priority;
+	struct proc *curr, *prev = NULL;
+	
+	sjf_anti_starvation(p);
+
+	if (rdy_head[q] = NULL) {
+		rdy_head[q] = rdy_tall[q] = p;
+		p->p_nextready = NULL;
+		return;
+	}
+
+	for (curr = rdy_head[q]; curr != NULL; prev = curr, curr = 
+curr->p_nextready){
+		if (sjf_compare_processes(p, curr)) {
+			p->p_nextready = curr;
+
+			if (prev == NULL) {
+				rdy_head[q] = p;
+			} else {
+				prev->p_nextready = p;
+			}
+			return;
+		}
+	}
+	prev->p_nextready = p;
+	p->p_nextready = NULL;
+	rdy_tail[q] = p;
+}	 
 /*===========================================================================*
  *				switch_to_user				     * 
  *===========================================================================*/
@@ -1605,6 +1686,21 @@ void enqueue(
  * process is assigned to.
  */
   int q = rp->p_priority;	 		/* scheduling queue to use */
+
+	if (q >= USER_Q && q <= MIN_USER_Q) {
+		rp->p_wait_start_time = get_monotonic();
+		sjf_insert_sorted(rp);
+	} else {
+		if (rdy_head[q] = NULL) {
+			rdy_head[q] = rdy_tail[q] = rp;
+		} else {
+			rdy_tail[q]->p_nextready = rp;
+			rdy_tail[q] = rp;
+		}
+		rp->p_nextready = NULL;
+	}
+}
+/*
   struct proc **rdy_head, **rdy_tail;
   
   assert(proc_is_runnable(rp));
@@ -1656,6 +1752,7 @@ void enqueue(
 #if DEBUG_SANITYCHECKS
   assert(runqueues_ok_local());
 #endif
+*/
 }
 
 /*===========================================================================*
@@ -1790,6 +1887,7 @@ static struct proc * pick_proc(void)
  *
  * This function always uses the run queues of the local cpu!
  */
+/*
   register struct proc *rp;			/* process to run */
   struct proc **rdy_head;
   int q;				/* iterate over queues */
@@ -1811,7 +1909,37 @@ static struct proc * pick_proc(void)
   }
   return NULL;
 }
+*/
+	struct proc *rp;
+	int q;
 
+	for (q = 0; q < NR_SCHED_QUEUES; q++) {
+		if (rdy_head[q] != NULL) {
+			rp = rdy_head[q];
+			
+			if(q >= USER_Q && q <= MIN_USER_Q) {
+				rp->p_start_time = get_monotonic();
+				rp->p_actual_runtime = 0;
+			}
+			return rp;
+		}
+	}
+	return proc_addr(IDLE);
+}
+
+void sjf_process_finished(struct proc *p)
+{
+	clock_t finish_time = get_monotonic();
+
+	if (p->p_priority >= USER_Q && p->p_priority <= MIN_USER_Q) {
+		p->p_actual_runtime = finish_time - p->p_start_time;
+		p->p_total_runtime += p->p_actual_runtime;
+
+		update_sjf_estimate(p);
+
+		p->p_sjf_priority_boost = 0;
+	}
+}
 /*===========================================================================*
  *				endpoint_lookup				     *
  *===========================================================================*/

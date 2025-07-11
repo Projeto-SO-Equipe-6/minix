@@ -21,6 +21,11 @@
  */
 
 EXTERN struct schedproc {
+	clock_t estimated_burst_time;
+	clock_t actualburst_time;
+	int burst_count;
+	clock_t avg_burst_time;
+
 	endpoint_t endpoint;	/* process endpoint id */
 	endpoint_t parent;	/* parent endpoint id */
 	unsigned flags;		/* flag bits */

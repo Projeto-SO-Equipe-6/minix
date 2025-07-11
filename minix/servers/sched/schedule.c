@@ -157,6 +157,11 @@ int do_start_scheduling(message *m_ptr)
 	}
 	rmp = &schedproc[proc_nr_n];
 
+	rmp->estimate_burst_time = SJF_INITIAL_ESTIMATE;
+	rmp->actual_burst_time = 0;
+	rmp->burst_count = 0;
+	rmp->avg_burst_time = SJF_INITIAL_ESTIMATE;
+
 	/* Populate process slot */
 	rmp->endpoint     = m_ptr->m_lsys_sched_scheduling_start.endpoint;
 	rmp->parent       = m_ptr->m_lsys_sched_scheduling_start.parent;
@@ -246,6 +251,30 @@ int do_start_scheduling(message *m_ptr)
 	m_ptr->m_sched_lsys_scheduling_start.scheduler = SCHED_PROC_NR;
 
 	return OK;
+}
+
+/*	update_estimates	*/
+static void sjf_update_estimates(void)
+{
+	struct schedproc *rmp;
+
+	for(rmp = schedproc; rmp < schedproc + NR_PROCS; rmp++) {
+		if (rmp->flags & IN_USE) {
+			if (rmp->actual_burst_time > 0) {
+				if (rmp->burst_count == 0) {
+					rmp->avg_burst_time = 
+rmp->actual_burst_time;
+				} else {
+					rmp->avg_burst_time = 
+(rmp->avg_burst_time + rmp->actual_burst_time) / 2;
+				}
+				rmp->burst_count++;
+				rmp->estimated_burst_time = 
+rmp->avg_burst_time;
+				rmp->actual_burst_time = 0;
+			}
+		}
+	}
 }
 
 /*===========================================================================*

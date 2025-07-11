@@ -33,6 +33,14 @@ struct proc {
 				   FIXME remove this */
   struct proc *p_scheduler;	/* who should get out of quantum msg */
   unsigned p_cpu;		/* what CPU is the process running on */
+clock_t p_estimed_runtime; /* tempo estimado de execucao */
+clock_t p_actual_runtime; /* tempo real de execucao */
+clock_t p_start_time; /* quando o processo comecou */
+clock_t p_total_runtime; /* tempo total ja executado */
+int p_execution_count; /* numero de execucoes */
+clock_t p_wait_start_time; /* inicio tempo de espera */
+int p_sjf_priority_boost; /* boost anti-starvation */
+
 #ifdef CONFIG_SMP
   bitchunk_t p_cpu_mask[BITMAP_CHUNKS(CONFIG_MAX_CPUS)]; /* what CPUs is the
 							    process allowed to
@@ -138,6 +146,10 @@ struct proc {
 
 #endif /* __ASSEMBLY__ */
 
+#define SJF_ALPHA 50 /* peso para media exponencial (0-100)
+#define SJF_INITIAL_ESTIMATE 100 /* estimativa inicial em ticks */
+#define SJF_MAX_ESTIMATE 1000 /* estimativa maxima */
+#define SJF_AGING 500 /* ticks para aging anti-starvation */
 /* Bits for the runtime flags. A process is runnable iff p_rts_flags == 0. */
 #define RTS_SLOT_FREE	0x01	/* process slot is free */
 #define RTS_PROC_STOP	0x02	/* process has been stopped */
