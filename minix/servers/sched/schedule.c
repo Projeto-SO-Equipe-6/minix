@@ -100,6 +100,9 @@ int do_noquantum(message *m_ptr)
 		rmp->priority += 1; /* lower priority */
 	}
 
+	rmp->actual_burst_time += rmp->time_slice;
+	sjf_update_estimates();
+
 	if ((rv = schedule_process_local(rmp)) != OK) {
 		return rv;
 	}
@@ -330,11 +333,22 @@ static int schedule_process(struct schedproc * rmp, unsigned flags)
 
 	pick_cpu(rmp);
 
-	if (flags & SCHEDULE_CHANGE_PRIO)
-		new_prio = rmp->priority;
-	else
+	if (flags & SCHEDULE_CHANGE_PRIO) {
+		int estimate = rmp->estimated_burst_time;
+		
+		if (estimate < 100) {
+			new_prio = USER_Q; // mais alta
+		} else if (estimate < 300) {
+			new_prio = USER_Q + 1;
+		} else if (estimate < 600) {
+			new_prio = USER_Q + 2;
+		} else {
+			new_prio = MIN_USER_Q; // mais baixa
+		}
+	} else {
 		new_prio = -1;
-
+	}
+	
 	if (flags & SCHEDULE_CHANGE_QUANTUM)
 		new_quantum = rmp->time_slice;
 	else
