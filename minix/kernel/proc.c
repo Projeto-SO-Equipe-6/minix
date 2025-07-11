@@ -355,7 +355,7 @@ static void sjf_insert_sorted(struct proc *p)
 	
 	sjf_anti_starvation(p);
 
-	if (rdy_head[q] = NULL) {
+	if (rdy_head[q] == NULL) {
 		rdy_head[q] = rdy_tall[q] = p;
 		p->p_nextready = NULL;
 		return;
