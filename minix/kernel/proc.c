@@ -355,29 +355,38 @@ static void sjf_insert_sorted(struct proc *p)
 	
 	sjf_anti_starvation(p);
 
+	// Caso lista esteja vazia
 	if (rdy_head[q] == NULL) {
 		rdy_head[q] = rdy_tail[q] = p;
 		p->p_nextready = NULL;
 		return;
 	}
 
-	for (curr = rdy_head[q]; curr != NULL; prev = curr, curr = 
-curr->p_nextready){
+	// Procurar onde inserir baseado no SJF
+	for (curr = rdy_head[q]; curr != NULL; prev = curr, curr = curr->p_nextready) {
 		if (sjf_compare_processes(p, curr)) {
 			p->p_nextready = curr;
 
 			if (prev == NULL) {
+				// Inserção no início
 				rdy_head[q] = p;
 			} else {
+				// Inserção no meio
 				prev->p_nextready = p;
 			}
+
 			return;
 		}
 	}
-	prev->p_nextready = p;
+
+	// Inserção no final da fila
+	if (prev != NULL) {
+		prev->p_nextready = p;
+	}
 	p->p_nextready = NULL;
 	rdy_tail[q] = p;
-}	 
+}
+	 
 /*===========================================================================*
  *				switch_to_user				     * 
  *===========================================================================*/
@@ -1695,6 +1704,11 @@ void enqueue(
   rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
   rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 	if (q >= USER_Q && q <= MIN_USER_Q) {
+		if (!proc_is_runnable(rp)) {
+			printf("SJF ERRO: Processo %d não está pronto (flags: 0x%x)\n",
+			       rp->p_endpoint, rp->p_rts_flags);
+			return;
+		}
 		rp->p_wait_start_time = get_monotonic();
 		sjf_insert_sorted(rp);
 	} else {
