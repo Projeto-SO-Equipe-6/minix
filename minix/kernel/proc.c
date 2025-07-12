@@ -346,45 +346,44 @@ p2->p_sjf_priority_boost;
 /*	sjf_insert_sorted	*/
 static void sjf_insert_sorted(struct proc *p)
 {
-	int q = p->p_priority;
-	struct proc *curr, *prev = NULL;
+    int q = p->p_priority;
+    struct proc *curr, *prev = NULL;
+    struct proc **rdy_head, **rdy_tail;
+    
+    // Verificar se o processo está realmente pronto
+    if (!proc_is_runnable(p)) {
+        printf("sjf_insert_sorted: processo %d não está runnable\n", p->p_endpoint);
+        return;
+    }
 
-	struct proc **rdy_head, **rdy_tail;
-	rdy_head = get_cpu_var(p->p_cpu, run_q_head);
-	rdy_tail = get_cpu_var(p->p_cpu, run_q_tail);
-	
-	sjf_anti_starvation(p);
+    rdy_head = get_cpu_var(p->p_cpu, run_q_head);
+    rdy_tail = get_cpu_var(p->p_cpu, run_q_tail);
+    
+    sjf_anti_starvation(p);
 
-	// Caso lista esteja vazia
-	if (rdy_head[q] == NULL) {
-		rdy_head[q] = rdy_tail[q] = p;
-		p->p_nextready = NULL;
-		return;
-	}
+    if (rdy_head[q] == NULL) {
+        rdy_head[q] = rdy_tail[q] = p;
+        p->p_nextready = NULL;
+        return;
+    }
 
-	// Procurar onde inserir baseado no SJF
-	for (curr = rdy_head[q]; curr != NULL; prev = curr, curr = curr->p_nextready) {
-		if (sjf_compare_processes(p, curr)) {
-			p->p_nextready = curr;
+    for (curr = rdy_head[q]; curr != NULL; prev = curr, curr = curr->p_nextready) {
+        if (sjf_compare_processes(p, curr)) {
+            p->p_nextready = curr;
+            if (prev == NULL) {
+                rdy_head[q] = p;
+            } else {
+                prev->p_nextready = p;
+            }
+            return;
+        }
+    }
 
-			if (prev == NULL) {
-				// Inserção no início
-				rdy_head[q] = p;
-			} else {
-				// Inserção no meio
-				prev->p_nextready = p;
-			}
-
-			return;
-		}
-	}
-
-	// Inserção no final da fila
-	if (prev != NULL) {
-		prev->p_nextready = p;
-	}
-	p->p_nextready = NULL;
-	rdy_tail[q] = p;
+    if (prev != NULL) {
+        prev->p_nextready = p;
+    }
+    p->p_nextready = NULL;
+    rdy_tail[q] = p;
 }
 	 
 /*===========================================================================*
@@ -415,18 +414,13 @@ void switch_to_user(void)
 not_runnable_pick_new:
 	if (proc_is_preempted(p)) {
 		p->p_rts_flags &= ~RTS_PREEMPTED;
-		// Só reenqueue se REALMENTE está pronto
-		if (p->p_rts_flags == 0) {
+		if (proc_is_runnable(p)) {
 			if (p->p_cpu_time_left)
 				enqueue_head(p);
 			else
 				enqueue(p);
-		} else {
-			printf("switch_to_user: processo %d ainda não está totalmente pronto! flags=0x%x\n",
-			       p->p_endpoint, p->p_rts_flags);
 		}
 	}
-
 
 	/*
 	 * if we have no process to run, set IDLE as the current process for
@@ -1693,32 +1687,31 @@ asyn_error:
  *===========================================================================*/
 void enqueue(struct proc *rp)
 {
-	int q = rp->p_priority;
-	struct proc **rdy_head, **rdy_tail;
+    int q = rp->p_priority;
+    struct proc **rdy_head, **rdy_tail;
 
-	// 🔐 NUNCA insere se não está pronto
-	if (!proc_is_runnable(rp)) {
-		printf("❌ enqueue(): processo %d NÃO runnable (flags=0x%x)\n",
-		       rp->p_endpoint, rp->p_rts_flags);
-		return;
-	}
+    // Verificação mais rigorosa do estado runnable
+    if (rp->p_rts_flags != 0) {
+        printf("enqueue(): processo %d NÃO runnable (flags=0x%x)\n",
+               rp->p_endpoint, rp->p_rts_flags);
+        return;
+    }
 
-	rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
-	rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
+    rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
+    rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
-	// 🔐 NUNCA usa SJF para processos de sistema
-	if (q >= USER_Q && q <= MIN_USER_Q && rp->p_nr >= NR_TASKS) {
-		rp->p_wait_start_time = get_monotonic();
-		sjf_insert_sorted(rp);
-	} else {
-		if (rdy_head[q] == NULL) {
-			rdy_head[q] = rdy_tail[q] = rp;
-		} else {
-			rdy_tail[q]->p_nextready = rp;
-			rdy_tail[q] = rp;
-		}
-		rp->p_nextready = NULL;
-	}
+    if (q >= USER_Q && q <= MIN_USER_Q) {
+        rp->p_wait_start_time = get_monotonic();
+        sjf_insert_sorted(rp);
+    } else {
+        if (rdy_head[q] == NULL) {
+            rdy_head[q] = rdy_tail[q] = rp;
+        } else {
+            rdy_tail[q]->p_nextready = rp;
+            rdy_tail[q] = rp;
+        }
+        rp->p_nextready = NULL;
+    }
 }
 
 /*===========================================================================*
@@ -1847,31 +1840,30 @@ void dequeue(struct proc *rp)
  *===========================================================================*/
 static struct proc * pick_proc(void)
 {
-	struct proc *rp;
-	struct proc **rdy_head;
-	int q;
+    struct proc *rp;
+    struct proc **rdy_head;
+    int q;
 
-	rdy_head = get_cpulocal_var(run_q_head);
+    rdy_head = get_cpulocal_var(run_q_head);
 
-	for (q = 0; q < NR_SCHED_QUEUES; q++) {
-		for (rp = rdy_head[q]; rp != NULL; rp = rp->p_nextready) {
-			if (!proc_is_runnable(rp)) {
-				printf("pick_proc: processo %d na fila %d mas não está pronto (flags=0x%x)\n",
-				       rp->p_endpoint, q, rp->p_rts_flags);
-				continue;
-			}
+    for (q = 0; q < NR_SCHED_QUEUES; q++) {
+        for (rp = rdy_head[q]; rp != NULL; rp = rp->p_nextready) {
+            if (!proc_is_runnable(rp)) {
+                printf("pick_proc: processo %d na fila %d mas não está pronto (flags=0x%x)\n",
+                       rp->p_endpoint, q, rp->p_rts_flags);
+                continue;
+            }
 
-			if (q >= USER_Q && q <= MIN_USER_Q) {
-				rp->p_start_time = get_monotonic();
-				rp->p_actual_runtime = 0;
-			}
+            if (q >= USER_Q && q <= MIN_USER_Q) {
+                rp->p_start_time = get_monotonic();
+                rp->p_actual_runtime = 0;
+            }
 
-			return rp;
-		}
-	}
+            return rp;
+        }
+    }
 
-	// Se nenhum processo está pronto, retorna IDLE
-	return proc_addr(IDLE);
+    return proc_addr(IDLE);
 }
 
 void sjf_process_finished(struct proc *p)
