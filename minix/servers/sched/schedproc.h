@@ -22,7 +22,7 @@
 
 EXTERN struct schedproc {
 	clock_t estimated_burst_time;
-	clock_t actualburst_time;
+	clock_t actual_burst_time;
 	int burst_count;
 	clock_t avg_burst_time;
 
