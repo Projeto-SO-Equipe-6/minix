@@ -422,7 +422,7 @@ not_runnable_pick_new:
 			else
 				enqueue(p);
 		} else {
-			printf("⚠️ switch_to_user: processo %d ainda não está totalmente pronto! flags=0x%x\n",
+			printf("switch_to_user: processo %d ainda não está totalmente pronto! flags=0x%x\n",
 			       p->p_endpoint, p->p_rts_flags);
 		}
 	}
@@ -1853,27 +1853,30 @@ void dequeue(struct proc *rp)
  *===========================================================================*/
 static struct proc * pick_proc(void)
 {
-/* Decide who to run now.  A new process is selected and returned.
- * When a billable process is selected, record it in 'bill_ptr', so that the 
- * clock task can tell who to bill for system time.
- *
- * This function always uses the run queues of the local cpu!
- */
 	struct proc *rp;
 	struct proc **rdy_head;
 	int q;
 
+	rdy_head = get_cpulocal_var(run_q_head);
+
 	for (q = 0; q < NR_SCHED_QUEUES; q++) {
-		if (rdy_head[q] != NULL) {
-			rp = rdy_head[q];
-			
-			if(q >= USER_Q && q <= MIN_USER_Q) {
+		for (rp = rdy_head[q]; rp != NULL; rp = rp->p_nextready) {
+			if (!proc_is_runnable(rp)) {
+				printf("pick_proc: processo %d na fila %d mas não está pronto (flags=0x%x)\n",
+				       rp->p_endpoint, q, rp->p_rts_flags);
+				continue;
+			}
+
+			if (q >= USER_Q && q <= MIN_USER_Q) {
 				rp->p_start_time = get_monotonic();
 				rp->p_actual_runtime = 0;
 			}
+
 			return rp;
 		}
 	}
+
+	// Se nenhum processo está pronto, retorna IDLE
 	return proc_addr(IDLE);
 }
 
