@@ -415,13 +415,18 @@ void switch_to_user(void)
 not_runnable_pick_new:
 	if (proc_is_preempted(p)) {
 		p->p_rts_flags &= ~RTS_PREEMPTED;
-		if (proc_is_runnable(p)) {
+		// Só reenqueue se REALMENTE está pronto
+		if (p->p_rts_flags == 0) {
 			if (p->p_cpu_time_left)
 				enqueue_head(p);
 			else
 				enqueue(p);
+		} else {
+			printf("⚠️ switch_to_user: processo %d ainda não está totalmente pronto! flags=0x%x\n",
+			       p->p_endpoint, p->p_rts_flags);
 		}
 	}
+
 
 	/*
 	 * if we have no process to run, set IDLE as the current process for
