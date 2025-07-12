@@ -42,7 +42,7 @@
 #include <minix/syslib.h>
 
 /* Inicialização */
-struct proc* fila_sjf[TAM_MAX_FILA_SJF];
+struct proc* fila_sjf[TAM_MAX_FILA];
 int ini_fila_sjf = 0;
 int fim_fila_sjf = 0;
 
@@ -1600,21 +1600,21 @@ asyn_error:
 void enqueue(struct proc *rp) {
     assert(proc_is_runnable(rp));
     
-    if ((fim_fila_sjf + 1) % TAM_MAX_FILA_SJF == ini_fila_sjf) {
+    if ((fim_fila_sjf + 1) % TAM_MAX_FILA == ini_fila_sjf) {
         panic("Fila SJF cheia!");
     }
     
-    // Inserção ordenada (menor estimated_time primeiro)
+    // Inserção ordenada pelo tempo estimado de execução (menor primeiro)
     int i = fim_fila_sjf;
     while (i != ini_fila_sjf && 
-           fila_sjf[(i - 1 + TAM_MAX_FILA_SJF) % TAM_MAX_FILA_SJF]->p_accounting.estimated_time > 
+           fila_sjf[(i - 1 + TAM_MAX_FILA) % TAM_MAX_FILA]->p_accounting.estimated_time > 
            rp->p_accounting.estimated_time) {
-        fila_sjf[i] = fila_sjf[(i - 1 + TAM_MAX_FILA_SJF) % TAM_MAX_FILA_SJF];
-        i = (i - 1 + TAM_MAX_FILA_SJF) % TAM_MAX_FILA_SJF;
+        fila_sjf[i] = fila_sjf[(i - 1 + TAM_MAX_FILA) % TAM_MAX_FILA];
+        i = (i - 1 + TAM_MAX_FILA) % TAM_MAX_FILA;
     }
     
     fila_sjf[i] = rp;
-    fim_fila_sjf = (fim_fila_sjf + 1) % TAM_MAX_FILA_SJF;
+    fim_fila_sjf = (fim_fila_sjf + 1) % TAM_MAX_FILA;
     read_tsc_64(&rp->p_accounting.enter_queue);
 }
 
@@ -1707,14 +1707,19 @@ void dequeue(struct proc *rp) {
  *				pick_proc				     * 
  *===========================================================================*/
 static struct proc * pick_proc(void) {
-    if (ini_fila_sjf == fim_fila_sjf) return NULL;
+    struct proc *rp;
     
-    struct proc *rp = fila_sjf[ini_fila_sjf];
-    ini_fila_sjf = (ini_fila_sjf + 1) % TAM_MAX_FILA_SJF;
+    if (ini_fila_sjf == fim_fila_sjf) {
+        return NULL;
+    }
+    
+    // SJF sempre pega o primeiro da fila (que é o com menor tempo estimado)
+    rp = fila_sjf[ini_fila_sjf];
+    ini_fila_sjf = (ini_fila_sjf + 1) % TAM_MAX_FILA;
     
     assert(proc_is_runnable(rp));
     if (priv(rp)->s_flags & BILLABLE) get_cpulocal_var(bill_ptr) = rp;
-    return rp; // Corrigido: ponto-e-vírgula
+    return rp;
 }
 
 /*===========================================================================*
