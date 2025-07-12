@@ -135,7 +135,10 @@ struct proc {
   int p_schedules;
 #endif
 };
-
+#define MAX_FIFO 1000
+EXTERN struct proc *FIFO[MAX_FIFO];
+EXTERN int I_Fifo;
+EXTERN int F_Fifo;
 #endif /* __ASSEMBLY__ */
 
 /* Bits for the runtime flags. A process is runnable iff p_rts_flags == 0. */
