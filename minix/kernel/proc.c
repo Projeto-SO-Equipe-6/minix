@@ -1595,7 +1595,7 @@ asyn_error:
 }
 
 /*===========================================================================*
- *				enqueue					     * 
+ *	*Mod FIFO*			enqueue				     * 
  *===========================================================================*/
 void enqueue(struct proc *rp) {
     assert(proc_is_runnable(rp));
@@ -1608,21 +1608,15 @@ void enqueue(struct proc *rp) {
 }
 
 /*===========================================================================*
- *				enqueue_head				     *
+ *	*Mod FIFO*			enqueue_head			     *
  *===========================================================================*/
-/*
- * put a process at the front of its run queue. It comes handy when a process is
- * preempted and removed from run queue to not to have a currently not-runnable
- * process on a run queue. We have to put this process back at the fron to be
- * fair
- */
 static void enqueue_head(struct proc *rp)
 {
 
 }
 
 /*===========================================================================*
- *				dequeue					     * 
+ *	*Mod FIFO*			dequeue				     * 
  *===========================================================================*/
 void dequeue(struct proc *rp) {
     int i = I_Fifo;
@@ -1655,7 +1649,7 @@ MAX_FIFO;
 }
 
 /*===========================================================================*
- *				pick_proc				     * 
+ *	*Mod FIFO*			pick_proc			     * 
  *===========================================================================*/
 static struct proc * pick_proc(void) {
     struct proc *rp;
