@@ -16,6 +16,9 @@
 static unsigned balance_timeout;
 
 #define BALANCE_TIMEOUT	5 /* how often to balance queues in seconds */
+#define SJF_INITIAL_ESTIMATE 100
+
+static void sjf_update_estimates(void);
 
 static int schedule_process(struct schedproc * rmp, unsigned flags);
 
@@ -160,7 +163,7 @@ int do_start_scheduling(message *m_ptr)
 	}
 	rmp = &schedproc[proc_nr_n];
 
-	rmp->estimate_burst_time = SJF_INITIAL_ESTIMATE;
+	rmp->estimated_burst_time = SJF_INITIAL_ESTIMATE;
 	rmp->actual_burst_time = 0;
 	rmp->burst_count = 0;
 	rmp->avg_burst_time = SJF_INITIAL_ESTIMATE;
