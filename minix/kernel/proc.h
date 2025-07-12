@@ -136,7 +136,7 @@ struct proc {
 #endif
 };
 
-/* Definições para fila de prioridades estáticas */
+/* Definições para fila de prioridades estáticas */    /*MODIFICADO*/
 #define NUM_PRIORITIES 16  // Número de níveis de prioridade (0-15)
 #define QUEUE_SIZE_PER_PRIORITY 128  // Tamanho máximo de cada fila de prioridade
 
