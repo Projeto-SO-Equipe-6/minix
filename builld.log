@@ -1,4 +1,4 @@
-Build started at: Fri Jul 11 23:05:21 GMT 2025
+Build started at: Fri Jul 11 21:35:02 GMT 2025
 check-tools ===> .
 cleandir ===> .
 cleandir ===> tools
@@ -25322,6 +25322,10 @@ dependall ===> minix/kernel
      create  kernel/oxpcie.d
      create  kernel/pg_utils.d
      create  kernel/proc.d
+proc.c:1844:31: warning: '/*' within block comment [-Wcomment]
+  register struct proc *rp;                     /* process to run */
+                                                ^
+1 warning generated.
      create  kernel/profile.d
      create  kernel/protect.d
      create  kernel/system.d
@@ -25396,7 +25400,81 @@ proc.c:317:6: error: no member named 'p_estimate_runtime' in 'struct proc'; did 
 /usr/src/minix/minix/kernel/proc.h:36:9: note: 'p_estimated_runtime' declared here
 clock_t p_estimated_runtime; /* tempo estimado de execucao */
         ^
-1 error generated.
+proc.c:329:18: error: use of undeclared identifier 'SJF_AGING_THRESHHOLD'
+        if (wait_time > SJF_AGING_THRESHHOLD) {
+                        ^
+proc.c:358:18: error: using the result of an assignment as a condition without parentheses [-Werror,-Wparentheses]
+        if (rdy_head[q] = NULL) {
+            ~~~~~~~~~~~~^~~~~~
+proc.c:358:18: note: place parentheses around the assignment to silence this warning
+        if (rdy_head[q] = NULL) {
+                        ^
+            (                 )
+proc.c:358:18: note: use '==' to turn this assignment into an equality comparison
+        if (rdy_head[q] = NULL) {
+                        ^
+                        ==
+proc.c:359:17: error: use of undeclared identifier 'rdy_tall'; did you mean 'rdy_tail'?
+                rdy_head[q] = rdy_tall[q] = p;
+                              ^~~~~~~~
+                              rdy_tail
+proc.c:352:28: note: 'rdy_tail' declared here
+        struct proc **rdy_head, **rdy_tail;
+                                  ^
+proc.c:1701:19: error: using the result of an assignment as a condition without parentheses [-Werror,-Wparentheses]
+                if (rdy_head[q] = NULL) {
+                    ~~~~~~~~~~~~^~~~~~
+proc.c:1701:19: note: place parentheses around the assignment to silence this warning
+                if (rdy_head[q] = NULL) {
+                                ^
+                    (                 )
+proc.c:1701:19: note: use '==' to turn this assignment into an equality comparison
+                if (rdy_head[q] = NULL) {
+                                ^
+                                ==
+proc.c:1844:31: error: '/*' within block comment [-Werror,-Wcomment]
+  register struct proc *rp;                     /* process to run */
+                                                ^
+proc.c:1854:7: error: use of undeclared identifier 'rp'
+        if(!(rp = rdy_head[q])) {
+             ^
+proc.c:1858:26: error: use of undeclared identifier 'rp'
+        assert(proc_is_runnable(rp));
+                                ^
+/usr/src/minix/minix/kernel/proc.h:182:49: note: expanded from macro 'proc_is_runnable'
+#define proc_is_runnable(p)     (rts_f_is_runnable((p)->p_rts_flags))
+                                                    ^
+/usr/src/minix/minix/kernel/proc.h:181:34: note: expanded from macro 'rts_f_is_runnable'
+#define rts_f_is_runnable(flg)  ((flg) == 0)
+                                  ^
+/usr/include/assert.h:59:4: note: expanded from macro 'assert'
+        ((e) ? __static_cast(void,0) : __assert13(__FILE__, __LINE__,   \
+          ^
+proc.c:1859:11: error: use of undeclared identifier 'rp'
+        if (priv(rp)->s_flags & BILLABLE)               
+                 ^
+./priv.h:81:22: note: expanded from macro 'priv'
+#define priv(rp)          ((rp)->p_priv)
+                            ^
+proc.c:1860:32: error: use of undeclared identifier 'rp'
+                get_cpulocal_var(bill_ptr) = rp; /* bill for system time */
+                                             ^
+proc.c:1861:9: error: use of undeclared identifier 'rp'
+        return rp;
+               ^
+proc.c:1865:2: error: expected identifier or '('
+*/
+ ^
+proc.c:1869:2: error: expected identifier or '('
+        for (q = 0; q < NR_SCHED_QUEUES; q++) {
+        ^
+proc.c:1880:2: error: expected identifier or '('
+        return proc_addr(IDLE);
+        ^
+proc.c:1881:1: error: extraneous closing brace ('}')
+}
+^
+15 errors generated.
 *** Error code 1
 
 Stop.
