@@ -1696,9 +1696,9 @@ void enqueue(struct proc *rp)
 	int q = rp->p_priority;
 	struct proc **rdy_head, **rdy_tail;
 
-	// Protege contra processos inválidos
+	// 🔐 NUNCA insere se não está pronto
 	if (!proc_is_runnable(rp)) {
-		printf("enqueue(): processo %d NÃO runnable (flags=0x%x)\n",
+		printf("❌ enqueue(): processo %d NÃO runnable (flags=0x%x)\n",
 		       rp->p_endpoint, rp->p_rts_flags);
 		return;
 	}
@@ -1706,8 +1706,8 @@ void enqueue(struct proc *rp)
 	rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
 	rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
-	// Aplica SJF SOMENTE para processos de usuário
-	if (q >= USER_Q && q <= MIN_USER_Q) {
+	// 🔐 NUNCA usa SJF para processos de sistema
+	if (q >= USER_Q && q <= MIN_USER_Q && rp->p_nr >= NR_TASKS) {
 		rp->p_wait_start_time = get_monotonic();
 		sjf_insert_sorted(rp);
 	} else {
