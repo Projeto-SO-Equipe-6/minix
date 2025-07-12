@@ -262,25 +262,37 @@ int do_start_scheduling(message *m_ptr)
 /*	update_estimates	*/
 static void sjf_update_estimates(void)
 {
-	struct schedproc *rmp;
+    struct schedproc *rmp;
+    struct proc *p;
+    int proc_nr;
 
-	for(rmp = schedproc; rmp < schedproc + NR_PROCS; rmp++) {
-		if (rmp->flags & IN_USE) {
-			if (rmp->actual_burst_time > 0) {
-				if (rmp->burst_count == 0) {
-					rmp->avg_burst_time = 
-rmp->actual_burst_time;
-				} else {
-					rmp->avg_burst_time = 
-(rmp->avg_burst_time + rmp->actual_burst_time) / 2;
-				}
-				rmp->burst_count++;
-				rmp->estimated_burst_time = 
-rmp->avg_burst_time;
-				rmp->actual_burst_time = 0;
-			}
-		}
-	}
+    for (rmp = schedproc; rmp < schedproc + NR_PROCS; rmp++) {
+        if (rmp->flags & IN_USE) {
+            if (sched_isokendpt(rmp->endpoint, &proc_nr) == OK) {
+                p = proc_addr(proc_nr);
+                
+                // Sincronizar as estimativas entre as estruturas
+                rmp->estimated_burst_time = p->p_estimated_runtime;
+                rmp->actual_burst_time = p->p_actual_runtime;
+                rmp->burst_count = p->p_execution_count;
+                
+                if (p->p_actual_runtime > 0) {
+                    if (rmp->burst_count == 0) {
+                        rmp->avg_burst_time = rmp->actual_burst_time;
+                    } else {
+                        rmp->avg_burst_time = 
+                            (rmp->avg_burst_time + rmp->actual_burst_time) / 2;
+                    }
+                    rmp->estimated_burst_time = rmp->avg_burst_time;
+                    rmp->actual_burst_time = 0;
+                    
+                    // Atualizar de volta para struct proc
+                    p->p_estimated_runtime = rmp->estimated_burst_time;
+                    p->p_actual_runtime = 0;
+                }
+            }
+        }
+    }
 }
 
 /*===========================================================================*
