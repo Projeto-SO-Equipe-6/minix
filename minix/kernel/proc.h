@@ -136,6 +136,12 @@ struct proc {
 #endif
 };
 
+/* Definições para fila SJF (evitando conflitos com FCFS) */
+#define TAM_MAX_FILA_SJF 128
+EXTERN struct proc *fila_sjf[TAM_MAX_FILA_SJF];
+EXTERN int ini_fila_sjf;
+EXTERN int fim_fila_sjf;
+
 #endif /* __ASSEMBLY__ */
 
 /* Bits for the runtime flags. A process is runnable iff p_rts_flags == 0. */
