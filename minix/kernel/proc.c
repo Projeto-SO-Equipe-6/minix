@@ -41,6 +41,7 @@
 
 #include <minix/syslib.h>
 
+/*MODIFICADO*/
 struct proc *priority_queues[NUM_PRIORITIES][QUEUE_SIZE_PER_PRIORITY];
 int queue_front[NUM_PRIORITIES] = {0};
 int queue_rear[NUM_PRIORITIES] = {0};
@@ -1594,7 +1595,7 @@ asyn_error:
 }
 
 /*===========================================================================*
- *				enqueue					     * 
+ *	*MODIFICADO*			enqueue					     * 
  *===========================================================================*/
 void enqueue(struct proc *rp) {
     assert(proc_is_runnable(rp));
@@ -1609,7 +1610,7 @@ void enqueue(struct proc *rp) {
     read_tsc_64(&rp->p_accounting.enter_queue);
 }
 /*===========================================================================*
- *				enqueue_head				     *
+ *	*MODIFICADO*			enqueue_head				     *
  *===========================================================================*/
 void enqueue_head(struct proc *rp) {
     assert(proc_is_runnable(rp));
@@ -1624,7 +1625,7 @@ void enqueue_head(struct proc *rp) {
     read_tsc_64(&rp->p_accounting.enter_queue);
 }
 /*===========================================================================*
- *				dequeue					     * 
+ *	*MODIFICADO*			dequeue					     * 
  *===========================================================================*/
 void dequeue(struct proc *rp) {
     assert(!proc_is_runnable(rp));
@@ -1659,7 +1660,7 @@ void dequeue(struct proc *rp) {
     rp->p_dequeued = get_monotonic();
 }
 /*===========================================================================*
- *				pick_proc				     * 
+ *	*MODIFICADO*			pick_proc				     * 
  *===========================================================================*/
 static struct proc *pick_proc(void) {
     struct proc *rp = NULL;
