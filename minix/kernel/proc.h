@@ -137,8 +137,8 @@ struct proc {
 };
 
 /* Definições para fila de prioridades estáticas */    /*MODIFICADO*/
-#define NUM_PRIORITIES 16  // Número de níveis de prioridade (0-15)
-#define QUEUE_SIZE_PER_PRIORITY 256  // Tamanho máximo de cada fila de prioridade
+#define NUM_PRIORITIES 16
+#define QUEUE_SIZE_PER_PRIORITY 256
 
 EXTERN struct proc *priority_queues[NUM_PRIORITIES][QUEUE_SIZE_PER_PRIORITY];
 EXTERN int queue_front[NUM_PRIORITIES];
