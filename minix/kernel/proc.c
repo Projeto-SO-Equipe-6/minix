@@ -1707,7 +1707,7 @@ void enqueue(struct proc *rp)
 	rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
 
 	// Aplica SJF SOMENTE para processos de usuário
-	if (q >= USER_Q && q <= MIN_USER_Q && rp->max_priority >= USER_Q) {
+	if (q >= USER_Q && q <= MIN_USER_Q) {
 		rp->p_wait_start_time = get_monotonic();
 		sjf_insert_sorted(rp);
 	} else {
