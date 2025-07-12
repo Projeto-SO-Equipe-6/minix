@@ -137,8 +137,9 @@ struct proc {
 };
 
 /* Definições para fila SJF (evitando conflitos com FCFS) */
-#define TAM_MAX_FILA_SJF 128
-EXTERN struct proc *fila_sjf[TAM_MAX_FILA_SJF];
+/* Definições para fila SJF */
+#define TAM_MAX_FILA 128
+EXTERN struct proc *fila_sjf[TAM_MAX_FILA];
 EXTERN int ini_fila_sjf;
 EXTERN int fim_fila_sjf;
 
