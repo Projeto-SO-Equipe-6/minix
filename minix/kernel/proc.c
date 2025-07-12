@@ -1691,29 +1691,23 @@ asyn_error:
 /*===========================================================================*
  *				enqueue					     * 
  *===========================================================================*/
-void enqueue(
-  register struct proc *rp	/* this process is now runnable */
-)
+void enqueue(struct proc *rp)
 {
-/* Add 'rp' to one of the queues of runnable processes.  This function is 
- * responsible for inserting a process into one of the scheduling queues. 
- * The mechanism is implemented here.   The actual scheduling policy is
- * defined in sched() and pick_proc().
- *
- * This function can be used x-cpu as it always uses the queues of the cpu the
- * process is assigned to.
- */
-  int q = rp->p_priority;
-  struct proc **rdy_head, **rdy_tail;
+	int q = rp->p_priority;
+	struct proc **rdy_head, **rdy_tail;
 
-  rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
-  rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
-	if (q >= USER_Q && q <= MIN_USER_Q) {
-		if (!proc_is_runnable(rp)) {
-			printf("SJF ERRO: Processo %d não está pronto (flags: 0x%x)\n",
-			       rp->p_endpoint, rp->p_rts_flags);
-			return;
-		}
+	// Protege contra processos inválidos
+	if (!proc_is_runnable(rp)) {
+		printf("enqueue(): processo %d NÃO runnable (flags=0x%x)\n",
+		       rp->p_endpoint, rp->p_rts_flags);
+		return;
+	}
+
+	rdy_head = get_cpu_var(rp->p_cpu, run_q_head);
+	rdy_tail = get_cpu_var(rp->p_cpu, run_q_tail);
+
+	// Aplica SJF SOMENTE para processos de usuário
+	if (q >= USER_Q && q <= MIN_USER_Q && rp->max_priority >= USER_Q) {
 		rp->p_wait_start_time = get_monotonic();
 		sjf_insert_sorted(rp);
 	} else {
