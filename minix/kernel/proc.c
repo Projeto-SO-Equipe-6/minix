@@ -1665,7 +1665,6 @@ void dequeue(struct proc *rp) {
 static struct proc *pick_proc(void) {
     struct proc *rp = NULL;
     
-    // Percorre as prioridades da mais alta (0) para a mais baixa (15)
     for (int prio = 0; prio < NUM_PRIORITIES; prio++) {
         if (queue_front[prio] != queue_rear[prio]) {
             rp = priority_queues[prio][queue_front[prio]];
