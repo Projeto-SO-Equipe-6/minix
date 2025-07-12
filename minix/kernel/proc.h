@@ -52,6 +52,7 @@ struct proc {
 	unsigned long ipc_sync;
 	unsigned long ipc_async;
 	unsigned long preempted;
+	unsigned int estimated_time;
   } p_accounting;
 
   clock_t p_dequeued;		/* uptime at which process was last dequeued */
