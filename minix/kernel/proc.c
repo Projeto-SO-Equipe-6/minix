@@ -1604,7 +1604,6 @@ void enqueue(struct proc *rp) {
         panic("Fila SJF cheia!");
     }
     
-    // Inserção ordenada pelo tempo estimado de execução (menor primeiro)
     int i = fim_fila_sjf;
     while (i != ini_fila_sjf && 
            fila_sjf[(i - 1 + TAM_MAX_FILA) % TAM_MAX_FILA]->p_accounting.estimated_time > 
@@ -1713,7 +1712,6 @@ static struct proc * pick_proc(void) {
         return NULL;
     }
     
-    // SJF sempre pega o primeiro da fila (que é o com menor tempo estimado)
     rp = fila_sjf[ini_fila_sjf];
     ini_fila_sjf = (ini_fila_sjf + 1) % TAM_MAX_FILA;
     
